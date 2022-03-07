@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:fundus_sn_web/Repository.dart/LocalNotifier.dart';
+import 'package:provider/provider.dart';
 
 class MetaPMSelectionWidget extends StatefulWidget {
   const MetaPMSelectionWidget({Key? key}) : super(key: key);
@@ -25,8 +27,9 @@ class _MetaPMSelectionWidgetState extends State<MetaPMSelectionWidget> {
   String selectedLesionCategory = "";
   @override
   void initState() {
-    selectedCategory = categories[0];
-    selectedLesionCategory = lesionCategories[0];
+    checkSelectedCategory();
+    //  selectedCategory = categories[0];
+    //  selectedLesionCategory = lesionCategories[0];
     // TODO: implement initState
     super.initState();
   }
@@ -42,81 +45,107 @@ class _MetaPMSelectionWidgetState extends State<MetaPMSelectionWidget> {
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Image.asset("assets/images/META-PM.png"),
-            Container(
-              //  height: 40,
-              //       width: 500,
-              child: ListTile(
-                leading: Radio(
-                    value: categories[0],
-                    groupValue: selectedCategory,
-                    onChanged: onChanged),
-                title: Text(
-                  categories[0],
-                  style: style,
-                ),
-              ),
-            ),
-            Container(
-              //  height: 40,
-              //       width: 500,
-              child: ListTile(
-                leading: Radio(
-                    value: categories[1],
-                    groupValue: selectedCategory,
-                    onChanged: onChanged),
-                title: Text(
-                  categories[1],
-                  style: style,
-                ),
-              ),
-            ),
-            Container(
-              //  height: 40,
-              //       width: 500,
-              child: ListTile(
-                leading: Radio(
-                    value: categories[2],
-                    groupValue: selectedCategory,
-                    onChanged: onChanged),
-                title: Text(
-                  categories[2],
-                  style: style,
-                ),
-              ),
-            ),
-            Container(
-              //  height: 40,
-              //       width: 500,
-              child: ListTile(
-                leading: Radio(
-                    value: categories[3],
-                    groupValue: selectedCategory,
-                    onChanged: onChanged),
-                title: Text(
-                  categories[3],
-                  style: style,
-                ),
-              ),
-            ),
-            Container(
-              //  height: 40,
-              //       width: 500,
-              child: ListTile(
-                leading: Radio(
-                    value: categories[4],
-                    groupValue: selectedCategory,
-                    onChanged: onChanged),
-                title: Text(
-                  categories[4],
-                  style: style,
-                ),
-              ),
-            ),
+            RadioListTile<String>(
+                title: Text(categories[0]),
+                value: categories[0],
+                groupValue: selectedCategory,
+                onChanged: onChanged),
+            RadioListTile<String>(
+                title: Text(categories[1]),
+                value: categories[1],
+                groupValue: selectedCategory,
+                onChanged: onChanged),
+            RadioListTile<String>(
+                title: Text(categories[2]),
+                value: categories[2],
+                groupValue: selectedCategory,
+                onChanged: onChanged),
+            RadioListTile<String>(
+                title: Text(categories[3]),
+                value: categories[3],
+                groupValue: selectedCategory,
+                onChanged: onChanged),
+            RadioListTile<String>(
+                title: Text(categories[4]),
+                value: categories[4],
+                groupValue: selectedCategory,
+                onChanged: onChanged),
+
+            // Container(
+            //   //  height: 40,
+            //   //       width: 500,
+            //   child: ListTile(
+            //     leading: Radio(
+            //         value: categories[0],
+            //         groupValue: selectedCategory,
+            //         onChanged: onChanged),
+            //     title: Text(
+            //       categories[0],
+            //       style: style,
+            //     ),
+            //   ),
+            // ),
+            // Container(
+            //   //  height: 40,
+            //   //       width: 500,
+            //   child: ListTile(
+            //     leading: Radio(
+            //         value: categories[1],
+            //         groupValue: selectedCategory,
+            //         onChanged: onChanged),
+            //     title: Text(
+            //       categories[1],
+            //       style: style,
+            //     ),
+            //   ),
+            // ),
+            // Container(
+            //   //  height: 40,
+            //   //       width: 500,
+            //   child: ListTile(
+            //     leading: Radio(
+            //         value: categories[2],
+            //         groupValue: selectedCategory,
+            //         onChanged: onChanged),
+            //     title: Text(
+            //       categories[2],
+            //       style: style,
+            //     ),
+            //   ),
+            // ),
+            // Container(
+            //   //  height: 40,
+            //   //       width: 500,
+            //   child: ListTile(
+            //     leading: Radio(
+            //         value: categories[3],
+            //         groupValue: selectedCategory,
+            //         onChanged: onChanged),
+            //     title: Text(
+            //       categories[3],
+            //       style: style,
+            //     ),
+            //   ),
+            // ),
+            // Container(
+            //   //  height: 40,
+            //   //       width: 500,
+            //   child: ListTile(
+            //     leading: Radio(
+            //         value: categories[4],
+            //         groupValue: selectedCategory,
+            //         onChanged: onChanged),
+            //     title: Text(
+            //       categories[4],
+            //       style: style,
+            //     ),
+            //   ),
+            // ),
             Container(
               width: 300,
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.black)),
+                  border: Border.all(color: Colors.red)),
               child: Column(
                 children: [
                   const Text("Plus Lesions"),
@@ -195,11 +224,32 @@ class _MetaPMSelectionWidgetState extends State<MetaPMSelectionWidget> {
     setState(() {
       selectedCategory = value;
     });
+    Provider.of<LocalNotifier>(context, listen: false)
+        .setMetaPm(selectedCategory);
   }
 
   void onLesionChanged(value) {
     setState(() {
       selectedLesionCategory = value;
     });
+    Provider.of<LocalNotifier>(context, listen: false)
+        .setMetaPmLesion(selectedLesionCategory);
+  }
+
+  void checkSelectedCategory() {
+    LocalNotifier localNotifier =
+        Provider.of<LocalNotifier>(context, listen: false);
+    if (localNotifier.selectedModel == null) return;
+    if (localNotifier.selectedModel!.metaPMChoice1 != null) {
+      setState(() {
+        selectedCategory = localNotifier.selectedModel!.metaPMChoice1!;
+      });
+    }
+    if (localNotifier.selectedModel!.metaPMLesionChoice != null) {
+      setState(() {
+        selectedLesionCategory =
+            localNotifier.selectedModel!.metaPMLesionChoice!;
+      });
+    }
   }
 }

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'Repository.dart/LocalNotifier.dart';
 
 class PeripheralRetina extends StatefulWidget {
   PeripheralRetina({Key? key}) : super(key: key);
@@ -25,6 +28,32 @@ class _PeripheralRetinaState extends State<PeripheralRetina> {
     "Chorioretinal atrophy": false,
     "Snow flake degeneration": false,
   };
+  List<String> selectedPeripheral = [];
+  @override
+  void initState() {
+    checkSelectedCategory();
+    super.initState();
+  }
+
+  void checkSelectedCategory() {
+    LocalNotifier localNotifier =
+        Provider.of<LocalNotifier>(context, listen: false);
+    if (localNotifier.selectedModel == null) return;
+    if (localNotifier.selectedModel!.peripheralChoice != null) {
+      setState(() {
+        localNotifier.selectedModel!.peripheralChoice.forEach((key) {
+          selectedPeripheral.add(key);
+          if (_map[key] != null) {
+            _map[key] = true;
+          }
+          if (_peripheral[key] != null) {
+            _peripheral[key] = true;
+          }
+        });
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -47,6 +76,14 @@ class _PeripheralRetinaState extends State<PeripheralRetina> {
                         setState(() {
                           _peripheral[_peripheral.keys.elementAt(i)] = e;
                         });
+                        if (e!) {
+                          selectedPeripheral.add(_peripheral.keys.elementAt(i));
+                          Provider.of<LocalNotifier>(context, listen: false)
+                              .setPeripheralChoice(selectedPeripheral);
+                        } else {
+                          selectedPeripheral
+                              .remove(_peripheral.keys.elementAt(i));
+                        }
                       }),
                 )
             ],
@@ -70,6 +107,13 @@ class _PeripheralRetinaState extends State<PeripheralRetina> {
                         setState(() {
                           _map[_map.keys.elementAt(i)] = e;
                         });
+                        if (e!) {
+                          selectedPeripheral.add(_map.keys.elementAt(i));
+                          Provider.of<LocalNotifier>(context, listen: false)
+                              .setPeripheralChoice(selectedPeripheral);
+                        } else {
+                          selectedPeripheral.remove(_map.keys.elementAt(i));
+                        }
                       }),
                 )
             ],

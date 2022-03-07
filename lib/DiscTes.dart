@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'Repository.dart/LocalNotifier.dart';
 
 class DiscTessellation extends StatefulWidget {
   DiscTessellation({Key? key}) : super(key: key);
@@ -15,9 +18,20 @@ class _DiscTessellationState extends State<DiscTessellation> {
     for (int i = 0; i < 8; i++) {
       categories.add("Grade " + (i * 0.5).toString());
     }
-    selectedCategory = categories[0];
-
+    //  selectedCategory = categories[0];
+    checkSelectedCategory();
     super.initState();
+  }
+
+  void checkSelectedCategory() {
+    LocalNotifier localNotifier =
+        Provider.of<LocalNotifier>(context, listen: false);
+    if (localNotifier.selectedModel == null) return;
+    if (localNotifier.selectedModel!.discTesChoice != null) {
+      setState(() {
+        selectedCategory = localNotifier.selectedModel!.discTesChoice!;
+      });
+    }
   }
 
   @override
@@ -45,6 +59,8 @@ class _DiscTessellationState extends State<DiscTessellation> {
                     setState(() {
                       selectedCategory = value!;
                     });
+                    Provider.of<LocalNotifier>(context, listen: false)
+                        .setDiscTes(selectedCategory);
                   },
                 ),
             ],

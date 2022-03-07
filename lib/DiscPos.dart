@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'Repository.dart/LocalNotifier.dart';
 
 class DiscPositional extends StatefulWidget {
   const DiscPositional({Key? key}) : super(key: key);
@@ -12,8 +15,20 @@ class _DiscPositionalState extends State<DiscPositional> {
   List categories = ["A: Horizontal", "B: Nasal", "C: Vertical", "D: Oblique"];
   @override
   void initState() {
-    selectedCategory = categories[0];
+    //  selectedCategory = categories[0];
+    checkSelectedCategory();
     super.initState();
+  }
+
+  void checkSelectedCategory() {
+    LocalNotifier localNotifier =
+        Provider.of<LocalNotifier>(context, listen: false);
+    if (localNotifier.selectedModel == null) return;
+    if (localNotifier.selectedModel!.discPosChoice != null) {
+      setState(() {
+        selectedCategory = localNotifier.selectedModel!.discPosChoice!;
+      });
+    }
   }
 
   @override
@@ -53,6 +68,8 @@ class _DiscPositionalState extends State<DiscPositional> {
                           setState(() {
                             selectedCategory = e!;
                           });
+                          Provider.of<LocalNotifier>(context, listen: false)
+                              .setDiscPos(selectedCategory);
                         }),
                   )
               ],

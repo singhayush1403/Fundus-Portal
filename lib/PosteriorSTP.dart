@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'Repository.dart/LocalNotifier.dart';
 
 class PosteriorSTPSelectionWidget extends StatefulWidget {
   PosteriorSTPSelectionWidget({Key? key}) : super(key: key);
@@ -23,8 +26,20 @@ class _PosteriorSTPSelectionWidgetState
 
   @override
   void initState() {
-    selectedStaphyloma = categories[0];
+    checkSelectedCategory();
+    //  selectedStaphyloma = categories[0];
     super.initState();
+  }
+
+  void checkSelectedCategory() {
+    LocalNotifier localNotifier =
+        Provider.of<LocalNotifier>(context, listen: false);
+    if (localNotifier.selectedModel == null) return;
+    if (localNotifier.selectedModel!.postStaphChoice != null) {
+      setState(() {
+        selectedStaphyloma = localNotifier.selectedModel!.postStaphChoice!;
+      });
+    }
   }
 
   @override
@@ -35,12 +50,13 @@ class _PosteriorSTPSelectionWidgetState
           'assets/images/pst.png',
         ),
         Container(
-      //    height: 500,
+          //    height: 500,
           width: 500,
           decoration: BoxDecoration(
               border: Border.all(color: Colors.black),
               borderRadius: BorderRadius.circular(20)),
-          child: Column(mainAxisSize: MainAxisSize.min,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               for (int i = 0; i < 7; i++)
                 RadioListTile<String>(
@@ -50,6 +66,8 @@ class _PosteriorSTPSelectionWidgetState
                     onChanged: (value) {
                       setState(() {
                         selectedStaphyloma = value!;
+                        Provider.of<LocalNotifier>(context, listen: false)
+                            .setPostStaphChoice(selectedStaphyloma);
                       });
                     })
             ],

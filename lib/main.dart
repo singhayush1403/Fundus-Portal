@@ -3,16 +3,21 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:fundus_sn_web/DiscPos.dart';
 import 'package:fundus_sn_web/DiscTes.dart';
 import 'package:fundus_sn_web/GoogleSignIn.dart';
 import 'package:fundus_sn_web/MacTes.dart';
 import 'package:fundus_sn_web/PerRet.dart';
 import 'package:fundus_sn_web/PosteriorSTP.dart';
+import 'package:fundus_sn_web/Repository.dart/FirestoreRepo.dart';
+import 'package:fundus_sn_web/Repository.dart/LocalNotifier.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:matrix_gesture_detector/matrix_gesture_detector.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:pinch_zoom/pinch_zoom.dart';
+import 'package:provider/provider.dart';
+import 'package:quantity_input/quantity_input.dart';
 
 import 'MetaPm.dart';
 
@@ -43,7 +48,11 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: ChangeNotifierProvider<LocalNotifier>(create: (context) {
+        return LocalNotifier();
+      }, builder: (context, child) {
+        return MyHomePage(title: "hello");
+      }),
     );
   }
 }
@@ -77,6 +86,14 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     "Disc Tessellation",
     "Disc positional & morphological changes",
     "Peripheral retina changes"
+  ];
+  List<Widget> pages = [
+    MetaPMSelectionWidget(),
+    PosteriorSTPSelectionWidget(),
+    MacularTesselation(),
+    DiscTessellation(),
+    DiscPositional(),
+    PeripheralRetina(),
   ];
   int selectedIndex = 0;
   String selected = "Meta-PM";
@@ -118,11 +135,24 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     // return GoogleSignInPage();
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 50,
         backgroundColor: Colors.black,
+        //
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         title: const Text("Fundus Image Classification"),
         actions: [
+          Center(
+            child: Consumer<LocalNotifier>(
+              builder: (context, value, child) {
+                return Text(
+                    '${value.totalImages - value.imageQueue.length - 1}/${value.totalImages} images labelled',
+                    style:
+                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold));
+              },
+            ),
+          ),
+          Container(width: 10),
           signedIn
               ? IconButton(
                   icon: Icon(Icons.logout, color: Colors.white),
@@ -134,71 +164,126 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                     setState(() {
                       signedIn = false;
                     });
+                    //  FirestoreRepository.writeAllImages();
                   },
                 )
               : Container()
         ],
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            Theme(
-              data: ThemeData(
-                  canvasColor: Colors.red,
-                  primaryColor: Colors.black,
-                  accentColor: Colors.black,
-                  hintColor: Colors.black),
-              child: DropdownButton<String>(
-                  dropdownColor: Colors.yellowAccent,
-                  value: selected,
-                  items: titles
-                      .map((e) => DropdownMenuItem<String>(
-                            child: Text(
-                              e,
-                              style: TextStyle(color: Colors.black),
-                            ),
-                            value: e,
-                          ))
-                      .toList(),
-                  onChanged: (e) {
-                    setState(() {
-                      selected = e!;
-                      selectedIndex = titles.indexOf(e);
-                    });
-                  }),
+      body: Consumer<LocalNotifier>(
+        builder: (context, value, child) {
+          return Center(
+            // Center is a layout widget. It takes a single child and positions it
+            // in the middle of the parent.
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Theme(
+                      data: Theme.of(context).copyWith(
+                        canvasColor: Colors.blue.shade200,
+                      ),
+                      child: Container(
+                        margin: EdgeInsets.all(5),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                        decoration: BoxDecoration(
+                            // color: Colors.white,
+                            color: Color.fromARGB(255, 188, 231, 189),
+                            borderRadius: BorderRadius.circular(4)),
+                        child: DropdownButton<String>(
+                            focusColor: Color.fromARGB(255, 188, 231, 189),
+                            dropdownColor: Color.fromARGB(255, 188, 231, 189),
+                            value: selected,
+                            items: titles
+                                .map((e) => DropdownMenuItem<String>(
+                                      child: Text(
+                                        e,
+                                        style: TextStyle(
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      value: e,
+                                    ))
+                                .toList(),
+                            onChanged: (e) {
+                              setState(() {
+                                selected = e!;
+                                selectedIndex = titles.indexOf(e);
+                              });
+                            }),
+                      ),
+                    ),
+                    Container(
+                      width: 50,
+                    ),
+                    RaisedButton(
+                        padding: EdgeInsets.all(10),
+                        color: Color.fromARGB(255, 188, 231, 189),
+                        onPressed: () async {
+                          String feedback = value.verifyInputsAndSendFeedback();
+                          if (feedback != "") {
+                            FToast fToast = FToast();
+                            fToast.init(context);
+                            fToast.showToast(
+                                toastDuration: Duration(seconds: 3),
+                                child: Container(
+                                    padding: EdgeInsets.all(10),
+                                    child: Text(feedback,
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16)),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                    )),
+                                gravity: ToastGravity.TOP);
+                          } else {
+                            await value.setImageData();
+                            setState(() {
+                              selectedIndex = 0;
+                              selected = titles[0];
+                            });
+                          }
+                        },
+                        child: Container(
+                          margin: EdgeInsets.all(15),
+                          child: Text(
+                            "Save changes and label next image",
+                            style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        )),
+                    // RaisedButton(
+                    //   onPressed: () {
+                    //     Navigator.of(context).push(MaterialPageRoute(
+                    //       builder: (context) {
+                    //         return MetaPMSelectionWidget();
+                    //       },
+                    //     ));
+                    //   },
+                    //   child: Text("View Labelled Images"),
+                    // )
+                  ],
+                ),
+                choiceSelectionWidget(value),
+                Spacer(),
+              ],
             ),
-            choiceSelectionWidget(),
-          ],
-        ),
+          );
+        },
       ),
       // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 
-  choiceSelectionWidget() {
+  int scale = 5;
+  choiceSelectionWidget(LocalNotifier notifier) {
     Widget choiceSelectionWidget = Container();
-    switch (selectedIndex) {
-      case 0:
-        choiceSelectionWidget = MetaPMSelectionWidget();
-        break;
-      case 1:
-        choiceSelectionWidget = PosteriorSTPSelectionWidget();
-        break;
-      case 2:
-        choiceSelectionWidget = MacularTesselation();
-        break;
-      case 3:
-        choiceSelectionWidget = DiscTessellation();
-        break;
-      case 4:
-        choiceSelectionWidget = DiscPositional();
-        break;
-      case 5:
-        choiceSelectionWidget = PeripheralRetina();
-    }
+    choiceSelectionWidget = pages[selectedIndex];
     return Container(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -209,9 +294,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
               GestureDetector(
                 onTap: () {
                   final position = details!.localPosition;
-                  final scale = 2;
-                  final x = -position.dx * (2 - 1);
-                  final y = -position.dy * (2 - 1);
+
+                  final x = -position.dx;
+                  final y = -position.dy;
                   final zoomed = Matrix4.identity()
                     ..scale(scale)
                     ..translate(x, y);
@@ -228,34 +313,66 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                   final value = Matrix4.identity();
                   controller.value = value;
                 },
-                child: Container(
-                    height: MediaQuery.of(context).size.height * 0.8,
-                    width: MediaQuery.of(context).size.width * 0.5,
-                    child: InteractiveViewer(
-                        transformationController: controller,
-                        // panEnabled: false,
-                        scaleEnabled: false,
-                        alignPanAxis: true,
-                        clipBehavior: Clip.hardEdge,
-                        maxScale: 3,
-                        child: Image.asset(
-                          "assets/images/5033178_OD_2.png",
-                          fit: BoxFit.contain,
-                        ))),
-              ),
-              selectedIndex == 2 || selectedIndex == 3
-                  ? Center(
-                      child: SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.8,
-                        width: 600,
-                        child: StatefulDragArea(
-                          //   transform: matrix4,
-                          child: Image.network(
-                              "https://pub.dev/static/img/pub-dev-logo-2x.png?hash=umitaheu8hl7gd3mineshk2koqfngugi"),
-                        ),
+                child: notifier.selectedModel != null
+                    ? Stack(
+                        children: [
+                          Container(
+                              decoration: BoxDecoration(
+                                  color: Color.fromARGB(255, 126, 218, 218)),
+                              height: MediaQuery.of(context).size.height * 0.8,
+                              width: MediaQuery.of(context).size.width * 0.5,
+                              child: InteractiveViewer(
+                                  transformationController: controller,
+                                  // panEnabled: false,
+                                  scaleEnabled: false,
+                                  alignPanAxis: true,
+                                  clipBehavior: Clip.hardEdge,
+                                  maxScale: 10,
+                                  child: notifier.selectedModel != null
+                                      ? Image.network(
+                                          notifier.selectedModel!.imageURL!,
+                                          fit: BoxFit.contain,
+                                        )
+                                      : Container())),
+                          QuantityInput(
+                              value: scale,
+                              acceptsZero: false,
+                              acceptsNegatives: false,
+                              label: "Zoom Scale",
+                              decoration: InputDecoration(
+                                  labelStyle: TextStyle(color: Colors.black),
+                                  counterStyle:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              onChanged: (value) {
+                                setState(() {
+                                  if (int.parse(value) >= 1) {
+                                    scale = int.parse(value);
+                                  }
+                                });
+                              }),
+                        ],
+                      )
+                    : Center(
+                        child: Container(
+                            margin: EdgeInsets.only(right: 200),
+                            height: 100,
+                            width: 100,
+                            child: CircularProgressIndicator()),
                       ),
-                    )
-                  : Container()
+              ),
+              // selectedIndex == 2 || selectedIndex == 3
+              //     ? Center(
+              //         child: SizedBox(
+              //           height: MediaQuery.of(context).size.height * 0.8,
+              //           width: 600,
+              //           child: StatefulDragArea(
+              //             //   transform: matrix4,
+              //             child: Image.network(
+              //                 "https://pub.dev/static/img/pub-dev-logo-2x.png?hash=umitaheu8hl7gd3mineshk2koqfngugi"),
+              //           ),
+              //         ),
+              //       )
+              //     : Container()
             ],
           )
         ],

@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
+import 'package:fundus_sn_web/Repository.dart/FirestoreRepo.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -65,6 +66,10 @@ class _GoogleSignInPageState extends State<GoogleSignInPage> {
 
     if (authResult != null) {
       user = authResult.user!;
+      if (authResult.additionalUserInfo != null &&
+          authResult.additionalUserInfo!.isNewUser) {
+        FirestoreRepository.createUser(user);
+      }
     }
     // The `GoogleAuthProvider` can only be used while running on the web
     // GoogleAuthProvider authProvider = GoogleAuthProvider();
